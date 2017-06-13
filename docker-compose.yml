@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  logstash:
+    image: docker.elastic.co/logstash/logstash:5.4.1
+    environment:
+      XPACK_MONITORING_ENABLED: "false"
+    command: --config.reload.automatic
+    ports:
+     - "12201:12201/udp"
+    volumes:
+      - "${PWD}/logstash-pipeline:/usr/share/logstash/pipeline/:ro"
+      - "${PWD}/logs-out:/logs-out"
+    restart: always
+
+  noise-ping:
+    image: alpine
+    command: ping localhost
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: udp://localhost:12201
+
+  noise-date:
+    image: alpine
+    command: sh -c "while true; do date; sleep 1; done"
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: udp://localhost:12201
